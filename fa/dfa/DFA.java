@@ -1,32 +1,36 @@
 package fa.dfa;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class DFA implements DFAInterface {
 
+    final short STATESSIZE = 5;
+    final short ALPHABETSIZE = 3;
+    StringBuilder sb = new StringBuilder();
+
     private Set<DFAState> states;
-    private Set<Character> alphabet;
     private Set<DFAState> finalStates;
     private Set<DFAState> startStates;
-    private HashMap<DFA, DFAState> delta;
+    private Set<Character> alphabet;
+    private HashMap<DFAState, Character> delta;
 
     public DFA() {
-        this.states = new LinkedHashSet<>();
-        this.alphabet = new LinkedHashSet<>();
-        this.startStates = new HashSet<>();
-        this.finalStates = new HashSet<>();
+        this.states = new LinkedHashSet<>(STATESSIZE);
+        this.alphabet = new LinkedHashSet<>(ALPHABETSIZE);
+        this.delta = new HashMap<>();
+        this.startStates = new LinkedHashSet<>(STATESSIZE);
+        this.finalStates = new LinkedHashSet<>(STATESSIZE);
     }
 
     @Override
     public boolean addState(String name) {
         DFAState s = new DFAState(name);
-        if (states.contains(getState(name))) {
-            return false;
+        if (!states.contains(getState(name))) {
+            return states.add(s);
         }
-        return states.add(s);
+        return false;
     }
 
     @Override
@@ -67,7 +71,8 @@ public class DFA implements DFAInterface {
     @Override
     public DFAState getState(String name) {
         for (DFAState state : states) {
-            if (state.getName().equals(name)) return state;
+            if (state.getName().equals(name))
+                return state;
         }
         return null;
     }
@@ -95,19 +100,19 @@ public class DFA implements DFAInterface {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(formattedString("Q = " + states.toString()));
-        sb.append(formattedString("\nSigma = " + alphabet.toString()));
+        sb.append(stringBuilderHelper("Q = " + states.toString()));
+        sb.append(stringBuilderHelper("\nSigma = " + alphabet.toString()));
+        // TODO: Delta
         sb.append("\ndelta = ");
-        sb.append("\nq0 = " + startStates.toString().replace("[", "").replace(",","").replace("]", ""));
-        sb.append(formattedString("\nF = " + finalStates.toString()));
+        sb.append("\nq0 = " + startStates.toString().replace("[", "").replace(",", "").replace("]", ""));
+        sb.append(stringBuilderHelper("\nF = " + finalStates.toString()));
 
         return sb.toString();
     }
 
-    private String formattedString(String s) {
+    // formats set, replaces bracket with curly brace, removes commas
+    private String stringBuilderHelper(String s) {
         return s.replace("[", "{ ").replace(",", "").replace("]", " }");
     }
- 
+
 }
