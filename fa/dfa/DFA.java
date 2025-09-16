@@ -105,12 +105,12 @@ public class DFA implements DFAInterface {
         // TODO: Delta
         sb.append("\ndelta = ");
         sb.append("\nq0 = " + startStates.toString().replace("[", "").replace(",", "").replace("]", ""));
-        sb.append(stringBuilderHelper("\nF = " + finalStates.toString()));
+        sb.append(stringBuilderHelper("\nF = " + finalStates.toString()) + "\n");
 
         return sb.toString();
     }
 
-    // formats set, replaces bracket with curly brace, removes commas
+    // formats Q set, replaces bracket with curly brace, removes commas
     private String stringBuilderHelper(String s) {
         return s.replace("[", "{ ").replace(",", "").replace("]", " }");
     }
