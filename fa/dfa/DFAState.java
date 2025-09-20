@@ -25,6 +25,10 @@ public class DFAState extends State {
         return this.isStart = true;
     }
 
+    public void removeStartState() {
+        this.isStart = false;
+    }
+
     public boolean getStartState() {
         return this.isStart;
     }

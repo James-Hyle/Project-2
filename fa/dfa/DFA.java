@@ -1,5 +1,7 @@
 package fa.dfa;
 
+import fa.State;
+
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -12,15 +14,14 @@ public class DFA implements DFAInterface {
 
     private Set<DFAState> states;
     private Set<DFAState> finalStates;
-    private Set<DFAState> startStates;
+    private DFAState startState;
     private Set<Character> alphabet;
-    private HashMap<DFAState, Character> delta;
+    private HashMap<DFAState, HashMap<Character, DFAState>> delta;
 
     public DFA() {
         this.states = new LinkedHashSet<>(STATESSIZE);
         this.alphabet = new LinkedHashSet<>(ALPHABETSIZE);
         this.delta = new HashMap<>();
-        this.startStates = new LinkedHashSet<>(STATESSIZE);
         this.finalStates = new LinkedHashSet<>(STATESSIZE);
     }
 
@@ -45,8 +46,14 @@ public class DFA implements DFAInterface {
     @Override
     public boolean setStart(String name) {
         if (states.contains(getState(name))) {
+            states.forEach(state -> {
+                if (isStart(state.getName()) && !state.equals(getState(name))) {
+                    state.removeStartState();
+                }
+            });
             getState(name).setStartState();
-            return startStates.add(getState(name));
+            startState = states.stream().filter(state -> state.equals(getState(name))).findFirst().get();
+            return true;
         }
         return false;
     }
@@ -58,8 +65,19 @@ public class DFA implements DFAInterface {
 
     @Override
     public boolean accepts(String s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'accepts'");
+        DFAState current = states.stream().filter(state -> isStart(state.getName())).findFirst().get();
+        for (char c : s.toCharArray()) {
+            if (!alphabet.contains(c)) {
+                return false;
+            }
+            HashMap<Character, DFAState> stateTransitions = delta.get(current);
+            if (stateTransitions.containsKey(c)) {
+                current = stateTransitions.get(c);
+            } else {
+                return false;
+            }
+        }
+        return current.getFinalState();
     }
 
     @Override
@@ -89,8 +107,27 @@ public class DFA implements DFAInterface {
 
     @Override
     public boolean addTransition(String fromState, String toState, char onSymb) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'addTransition'");
+        DFAState from = getState(fromState);
+        DFAState to = getState(toState);
+        if (from != null && to != null && alphabet.contains(onSymb)) {
+            HashMap<Character, DFAState> transitions;
+            if (delta.containsKey(from)) {
+                transitions = delta.get(from);
+                if (transitions.containsKey(onSymb)) {
+                    transitions.replace(onSymb, to);
+                }
+                else {
+                    transitions.put(onSymb, to);
+                }
+            }
+            else {
+                transitions = new HashMap<>();
+                transitions.put(onSymb, to);
+                delta.put(from, transitions);
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -102,9 +139,18 @@ public class DFA implements DFAInterface {
     public String toString() {
         sb.append(stringBuilderHelper("Q = " + states.toString()));
         sb.append(stringBuilderHelper("\nSigma = " + alphabet.toString()));
-        // TODO: Delta
-        sb.append("\ndelta = ");
-        sb.append("\nq0 = " + startStates.toString().replace("[", "").replace(",", "").replace("]", ""));
+        sb.append("\ndelta =\n");
+        for (char c : alphabet) {
+            sb.append(stringBuilderHelper("\t" + c));
+        }
+        states.forEach(state -> {
+            sb.append("\n" + state.getName() + "\t");
+            HashMap<Character, DFAState> transitions = delta.get(state);
+            for (char c : alphabet) {
+                sb.append(transitions.get(c).toString() + "\t");
+            }
+        });
+        sb.append("\nq0 = " + startState.toString());
         sb.append(stringBuilderHelper("\nF = " + finalStates.toString()) + "\n");
 
         return sb.toString();

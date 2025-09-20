@@ -207,6 +207,7 @@ public class DFATest {
 				+ "2	1	1\n"
 				+ "q0 = 0\n"
 				+ "F={3}\n";
+
 		assertTrue(dfaStr.replaceAll("\\s", "").equals(expStr.replaceAll("\\s", "")));
 		System.out.println("dfa2 toString pass");
 	}
@@ -358,6 +359,9 @@ public class DFATest {
 				+ "F	G	F\n"
 				+ "q0 = A\n"
 				+ "F = {G D}\n";
+
+		System.out.println(dfaStr);
+		System.out.println(expStr);
 
 		assertTrue(dfaStr.replaceAll("\\s", "").equals(expStr.replaceAll("\\s", "")));
 		System.out.println("dfa3 toString pass");
