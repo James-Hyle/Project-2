@@ -1,34 +1,43 @@
 package fa.dfa;
 
-import fa.State;
-
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class DFA implements DFAInterface {
+/**
+ * State machine that accepts or rejects input strings over a input language
+ * 
+ * @author James Hyle, Rebecca Berg
+ */
+public class DFA implements DFAInterface, Serializable {
 
     final short STATESSIZE = 5;
     final short ALPHABETSIZE = 3;
     StringBuilder sb = new StringBuilder();
 
     private Set<DFAState> states;
-    private Set<DFAState> finalStates;
     private DFAState startState;
+    private Set<DFAState> finalStates;
     private Set<Character> alphabet;
     private HashMap<DFAState, HashMap<Character, DFAState>> delta;
 
     public DFA() {
         this.states = new LinkedHashSet<>(STATESSIZE);
+        this.finalStates = new LinkedHashSet<>(STATESSIZE);
         this.alphabet = new LinkedHashSet<>(ALPHABETSIZE);
         this.delta = new HashMap<>();
-        this.finalStates = new LinkedHashSet<>(STATESSIZE);
     }
 
     @Override
     public boolean addState(String name) {
-        DFAState s = new DFAState(name);
         if (!states.contains(getState(name))) {
+            DFAState s = new DFAState(name);
             return states.add(s);
         }
         return false;
@@ -36,9 +45,10 @@ public class DFA implements DFAInterface {
 
     @Override
     public boolean setFinal(String name) {
-        if (states.contains(getState(name))) {
-            getState(name).setFinalState();
-            return finalStates.add(getState(name));
+        DFAState s = getState(name);
+        if (states.contains(s)) {
+            s.setFinalState();
+            return finalStates.add(s);
         }
         return false;
     }
@@ -82,8 +92,7 @@ public class DFA implements DFAInterface {
 
     @Override
     public Set<Character> getSigma() {
-        LinkedHashSet<Character> sigma = new LinkedHashSet<>(alphabet);
-        return sigma;
+        return alphabet;
     }
 
     @Override
@@ -109,20 +118,21 @@ public class DFA implements DFAInterface {
     public boolean addTransition(String fromState, String toState, char onSymb) {
         DFAState from = getState(fromState);
         DFAState to = getState(toState);
+        Character s = Character.valueOf(onSymb);
+
         if (from != null && to != null && alphabet.contains(onSymb)) {
+            // access delta's inner map locally to maintain memory integrity
             HashMap<Character, DFAState> transitions;
             if (delta.containsKey(from)) {
                 transitions = delta.get(from);
-                if (transitions.containsKey(onSymb)) {
-                    transitions.replace(onSymb, to);
+                if (transitions.containsKey(s)) {
+                    transitions.replace(s, to);
+                } else {
+                    transitions.put(s, to);
                 }
-                else {
-                    transitions.put(onSymb, to);
-                }
-            }
-            else {
+            } else {
                 transitions = new HashMap<>();
-                transitions.put(onSymb, to);
+                transitions.put(s, to);
                 delta.put(from, transitions);
             }
             return true;
@@ -132,10 +142,50 @@ public class DFA implements DFAInterface {
 
     @Override
     public DFA swap(char symb1, char symb2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'swap'");
+        try {
+            // create a deep copy of this DFA by serialization
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+            oOut.writeObject(this);
+            oOut.flush();
+            oOut.close();
+
+            ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+            ObjectInputStream oIn = new ObjectInputStream(bIn);
+            // copy DFA to new memory addresses, no references to original
+            DFA newDFA = (DFA) oIn.readObject();
+            oIn.close();
+
+            for (DFAState state : newDFA.delta.keySet()) {
+                // access deltas inner map locally to ensure memory integrity
+                HashMap<Character, DFAState> transitions = newDFA.delta.get(state);
+                if (transitions.containsKey(symb1) || transitions.containsKey(symb2)) {
+                    DFAState state1 = transitions.get(symb1);
+                    DFAState state2 = transitions.get(symb2);
+
+                    // swap states for symb1
+                    if (state1 != null) {
+                        transitions.put(symb2, state1);
+                    } else {
+                        transitions.remove(symb2);
+                    }
+
+                    if (state2 != null) {
+                        transitions.put(symb1, state2);
+                    } else {
+                        transitions.remove(symb1);
+                    }
+                }
+            }
+            return newDFA;
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
+    @Override
     public String toString() {
         sb.append(stringBuilderHelper("Q = " + states.toString()));
         sb.append(stringBuilderHelper("\nSigma = " + alphabet.toString()));
@@ -145,9 +195,8 @@ public class DFA implements DFAInterface {
         }
         states.forEach(state -> {
             sb.append("\n" + state.getName() + "\t");
-            HashMap<Character, DFAState> transitions = delta.get(state);
             for (char c : alphabet) {
-                sb.append(transitions.get(c).toString() + "\t");
+                sb.append(delta.get(state).get(c).toString() + "\t");
             }
         });
         sb.append("\nq0 = " + startState.toString());
@@ -156,7 +205,13 @@ public class DFA implements DFAInterface {
         return sb.toString();
     }
 
-    // formats Q set, replaces bracket with curly brace, removes commas
+    /**
+     * Helper method to format sets in toString by replaceing brackets and commas
+     * 
+     * @param s
+     * 
+     * @return formatted string
+     */
     private String stringBuilderHelper(String s) {
         return s.replace("[", "{ ").replace(",", "").replace("]", " }");
     }

@@ -1,6 +1,8 @@
 package fa;
 
-public abstract class State {
+import java.io.Serializable;
+
+public abstract class State implements Serializable {
 	/**
 	 * The state label.
 	 * It should be a unique name set by
