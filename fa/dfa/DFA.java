@@ -36,6 +36,7 @@ public class DFA implements DFAInterface, Serializable {
 
     @Override
     public boolean addState(String name) {
+        // check states to prevent duplicate before creating and adding new state
         if (!states.contains(getState(name))) {
             DFAState s = new DFAState(name);
             return states.add(s);
@@ -46,6 +47,7 @@ public class DFA implements DFAInterface, Serializable {
     @Override
     public boolean setFinal(String name) {
         DFAState s = getState(name);
+        // check for valid state before setting it as a final state
         if (states.contains(s)) {
             s.setFinalState();
             return finalStates.add(s);
@@ -55,14 +57,17 @@ public class DFA implements DFAInterface, Serializable {
 
     @Override
     public boolean setStart(String name) {
-        if (states.contains(getState(name))) {
+        DFAState temp = getState(name);
+        // check for valid state
+        if (states.contains(temp)) {
+            // loop through all states to remove any previously set starting states before setting new start
             states.forEach(state -> {
-                if (isStart(state.getName()) && !state.equals(getState(name))) {
+                if (isStart(state.getName()) && !state.equals(temp)) {
                     state.removeStartState();
                 }
             });
-            getState(name).setStartState();
-            startState = states.stream().filter(state -> state.equals(getState(name))).findFirst().get();
+            temp.setStartState();
+            startState = temp;
             return true;
         }
         return false;
@@ -75,18 +80,24 @@ public class DFA implements DFAInterface, Serializable {
 
     @Override
     public boolean accepts(String s) {
-        DFAState current = states.stream().filter(state -> isStart(state.getName())).findFirst().get();
+        // find set current state to start
+        DFAState current = startState;
+        // convert string to character array and loop through each character
         for (char c : s.toCharArray()) {
+            // ensure each character is contained in the alphabet
             if (!alphabet.contains(c)) {
                 return false;
             }
+            // find the transitions for the current state
             HashMap<Character, DFAState> stateTransitions = delta.get(current);
+            // if the character is a transition for the state, retrieve the new state and set it as current
             if (stateTransitions.containsKey(c)) {
                 current = stateTransitions.get(c);
             } else {
                 return false;
             }
         }
+        // return whether the current state is a final state after consuming array
         return current.getFinalState();
     }
 
@@ -97,6 +108,7 @@ public class DFA implements DFAInterface, Serializable {
 
     @Override
     public DFAState getState(String name) {
+        // loop through all states until a matching state name is found and return that state, otherwise return null
         for (DFAState state : states) {
             if (state.getName().equals(name))
                 return state;
@@ -123,8 +135,10 @@ public class DFA implements DFAInterface, Serializable {
         if (from != null && to != null && alphabet.contains(onSymb)) {
             // access delta's inner map locally to maintain memory integrity
             HashMap<Character, DFAState> transitions;
+            // search transition table for the from state, if found get its transitions, if not create new transitions map
             if (delta.containsKey(from)) {
                 transitions = delta.get(from);
+                // search transitions for character, if found replace current transition if not set new transition
                 if (transitions.containsKey(s)) {
                     transitions.replace(s, to);
                 } else {
@@ -206,7 +220,7 @@ public class DFA implements DFAInterface, Serializable {
     }
 
     /**
-     * Helper method to format sets in toString by replaceing brackets and commas
+     * Helper method to format sets in toString by replacing brackets and commas
      * 
      * @param s
      * 
