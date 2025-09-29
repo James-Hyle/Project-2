@@ -21,9 +21,11 @@ not fully implemented yet.
 
 Looking back on the project, there might be some simplification and reevaluation that could be done on
 a few things regarding the start and final states.  It might not be necessary for both the state itself
-and the DFA to know about whether a certain state is final, starting or neither.  Though, having both
+and the DFA to know about whether a certain state is a final or starting state.  Though, having both
 be aware gives us flexibility in how the DFA methods work and could allow us to adapt this program to 
-accommodate NFAs more easily in the future should that come up.
+accommodate NFAs more easily in the future should that come up.  It also would have been wise to write
+additional unit tests, especially for edge cases.  Ultimately, this project was a good exercise and 
+helped to solidify how DFAs can be structured.
 
 ## Compiling and Using
 
@@ -31,8 +33,11 @@ To compile execute the following command in the project directory:
 [you@onyx]$ javac -cp .:/usr/share/java/junit.jar ./test/dfa/DFATest.java
 
 To run the program once compiled use the following:
-[you@onyx]$ java -cp .:/usr/share/java/junit.jar:/usr/share/java/hamcrest/core.jar
+[you@onyx]$ java -cp .:/usr/share/java/junit.jar:/usr/share/java/hamcrest/hamcrest.jar 
 org.junit.runner.JUnitCore test.dfa.DFATest
+
+If you are using an IDE such as IntelliJ, simply navigate to the test file and run it with the IDE's 
+built-in run function.
 
 ## Sources used
 https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Set.html
