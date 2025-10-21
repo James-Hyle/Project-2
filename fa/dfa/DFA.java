@@ -60,7 +60,8 @@ public class DFA implements DFAInterface, Serializable {
         DFAState temp = getState(name);
         // check for valid state
         if (states.contains(temp)) {
-            // loop through all states to remove any previously set starting states before setting new start
+            // loop through all states to remove any previously set starting states before
+            // setting new start
             states.forEach(state -> {
                 if (isStart(state.getName()) && !state.equals(temp)) {
                     state.removeStartState();
@@ -90,7 +91,8 @@ public class DFA implements DFAInterface, Serializable {
             }
             // find the transitions for the current state
             HashMap<Character, DFAState> stateTransitions = delta.get(current);
-            // if the character is a transition for the state, retrieve the new state and set it as current
+            // if the character is a transition for the state, retrieve the new state and
+            // set it as current
             if (stateTransitions.containsKey(c)) {
                 current = stateTransitions.get(c);
             } else {
@@ -108,7 +110,8 @@ public class DFA implements DFAInterface, Serializable {
 
     @Override
     public DFAState getState(String name) {
-        // loop through all states until a matching state name is found and return that state, otherwise return null
+        // loop through all states until a matching state name is found and return that
+        // state, otherwise return null
         for (DFAState state : states) {
             if (state.getName().equals(name))
                 return state;
@@ -135,10 +138,12 @@ public class DFA implements DFAInterface, Serializable {
         if (from != null && to != null && alphabet.contains(onSymb)) {
             // access delta's inner map locally to maintain memory integrity
             HashMap<Character, DFAState> transitions;
-            // search transition table for the from state, if found get its transitions, if not create new transitions map
+            // search transition table for the from state, if found get its transitions, if
+            // not create new transitions map
             if (delta.containsKey(from)) {
                 transitions = delta.get(from);
-                // search transitions for character, if found replace current transition if not set new transition
+                // search transitions for character, if found replace current transition if not
+                // set new transition
                 if (transitions.containsKey(s)) {
                     transitions.replace(s, to);
                 } else {

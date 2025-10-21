@@ -6,7 +6,7 @@ public class NFAState extends State {
 
     private boolean isFinal;
     private boolean isStart;
-    // 
+    //
 
     /**
      * Constructor for a DFA state, initializes to non-start and non-final
