@@ -102,7 +102,7 @@ public class NFA implements NFAInterface, Serializable {
         // return whether the current state is a final state after consuming array
         return current.getFinalState();
     }
-    
+
     @Override
     public Set<NFAState> eClosure(NFAState s) {
         // TODO Auto-generated method stub

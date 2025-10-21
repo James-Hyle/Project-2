@@ -9,6 +9,7 @@ public class DFAState extends State {
 
     /**
      * Constructor for a DFA state, initializes to non-start and non-final
+     * 
      * @param name is the label of state
      */
     public DFAState(String name) {
@@ -19,6 +20,7 @@ public class DFAState extends State {
 
     /**
      * Sets this state as a final state of the DFA
+     * 
      * @return true if successful
      */
     public boolean setFinalState() {
@@ -27,6 +29,7 @@ public class DFAState extends State {
 
     /**
      * Returns true if this state is a final state
+     * 
      * @return true if final state
      */
     public boolean getFinalState() {
@@ -35,6 +38,7 @@ public class DFAState extends State {
 
     /**
      * Sets this state as the start state of the DFA
+     * 
      * @return true if successful
      */
     public boolean setStartState() {
@@ -50,6 +54,7 @@ public class DFAState extends State {
 
     /**
      * Gets whether this state is the start state
+     * 
      * @return true if is the start state
      */
     public boolean getStartState() {
