@@ -2,10 +2,16 @@ package fa.nfa;
 
 import fa.State;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+
 public class NFAState extends State {
 
     private boolean isFinal;
     private boolean isStart;
+    private LinkedHashMap<Character, Set<NFAState>> delta;
     //
 
     /**
@@ -61,4 +67,16 @@ public class NFAState extends State {
     public boolean getStartState() {
         return this.isStart;
     }
+
+    /**
+     * Gets the transitions for a particular character
+     *
+     * @return list of to states
+     */
+    public Set<NFAState> getTransitions(char c) { return delta.get(c); }
+
+    /**
+     * Set the transitions for the state
+     */
+    public void addTransitions(char c, Set<NFAState> s) { delta.put(c, s); }
 }

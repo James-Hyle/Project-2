@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * State machine that accepts or rejects input strings over a input language
@@ -22,16 +23,14 @@ public class NFA implements NFAInterface, Serializable {
     StringBuilder sb = new StringBuilder();
 
     private Set<NFAState> states;
-    private Set<NFAState> startState;
+    private NFAState startState;
     private Set<NFAState> finalStates;
     private Set<Character> alphabet;
-    private HashMap<NFAState, HashMap<Character, NFAState>> delta;
 
     public NFA() {
         this.states = new LinkedHashSet<>(STATESSIZE);
         this.finalStates = new LinkedHashSet<>(STATESSIZE);
         this.alphabet = new LinkedHashSet<>(ALPHABETSIZE);
-        this.delta = new HashMap<>();
     }
 
     @Override
@@ -79,6 +78,7 @@ public class NFA implements NFAInterface, Serializable {
         alphabet.add(symbol);
     }
 
+    //TODO: rework accepts from DFA to NFA structure
     @Override
     public boolean accepts(String s) {
         // find set current state to start
@@ -105,8 +105,20 @@ public class NFA implements NFAInterface, Serializable {
 
     @Override
     public Set<NFAState> eClosure(NFAState s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'eClosure'");
+        Set<NFAState> closures = new LinkedHashSet<>();
+        Stack<NFAState> statesStack = new Stack<>();
+        statesStack.push(s);
+        while (!statesStack.isEmpty()) {
+            NFAState current = statesStack.pop();
+            closures.add(current);
+            Set<NFAState> transitions = current.getTransitions('e');
+            for (NFAState transition : transitions) {
+                if (!statesStack.contains(transition)) {
+                    statesStack.push(transition);
+                }
+            }
+        }
+        return closures;
     }
 
     @Override
@@ -136,45 +148,25 @@ public class NFA implements NFAInterface, Serializable {
     }
 
     @Override
-    public boolean addTransition(String fromState, Set<String> toStates, char onSymb) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'addTransition'");
-    }
-
-    @Override
-    public boolean addTransition(String fromState, String toState, char onSymb) {
+    public boolean addTransition(String fromState, Set<String> toState, char onSymb) {
         NFAState from = getState(fromState);
-        NFAState to = getState(toState);
+        Set<NFAState> to = new LinkedHashSet<>(STATESSIZE);
+        for(String state: toState) {
+            to.add(getState(state));
+        }
         Character s = Character.valueOf(onSymb);
 
-        if (from != null && to != null && alphabet.contains(onSymb)) {
-            // access delta's inner map locally to maintain memory integrity
-            HashMap<Character, NFAState> transitions;
-            // search transition table for the from state, if found get its transitions, if
-            // not create new transitions map
-            if (delta.containsKey(from)) {
-                transitions = delta.get(from);
-                // search transitions for character, if found replace current transition if not
-                // set new transition
-                if (transitions.containsKey(s)) {
-                    transitions.replace(s, to);
-                } else {
-                    transitions.put(s, to);
-                }
-            } else {
-                transitions = new HashMap<>();
-                transitions.put(s, to);
-                delta.put(from, transitions);
-            }
+        if (from != null && !to.isEmpty() && alphabet.contains(onSymb)) {
+            from.addTransitions(s, to);
             return true;
         }
+
         return false;
     }
 
     @Override
     public Set<NFAState> getToState(NFAState from, char onSymb) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getToState'");
+        return from.getTransitions(onSymb);
     }
 
     @Override
@@ -183,51 +175,7 @@ public class NFA implements NFAInterface, Serializable {
         throw new UnsupportedOperationException("Unimplemented method 'maxCopies'");
     }
 
-    @Override
-    public NFA swap(char symb1, char symb2) {
-        try {
-            // create a deep copy of this NFA by serialization
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            ObjectOutputStream oOut = new ObjectOutputStream(bOut);
-            oOut.writeObject(this);
-            oOut.flush();
-            oOut.close();
-
-            ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
-            ObjectInputStream oIn = new ObjectInputStream(bIn);
-            // copy NFA to new memory addresses, no references to original
-            NFA newNFA = (NFA) oIn.readObject();
-            oIn.close();
-
-            for (NFAState state : newNFA.delta.keySet()) {
-                // access deltas inner map locally to ensure memory integrity
-                HashMap<Character, NFAState> transitions = newNFA.delta.get(state);
-                if (transitions.containsKey(symb1) || transitions.containsKey(symb2)) {
-                    NFAState state1 = transitions.get(symb1);
-                    NFAState state2 = transitions.get(symb2);
-
-                    // swap states for symb1
-                    if (state1 != null) {
-                        transitions.put(symb2, state1);
-                    } else {
-                        transitions.remove(symb2);
-                    }
-
-                    if (state2 != null) {
-                        transitions.put(symb1, state2);
-                    } else {
-                        transitions.remove(symb1);
-                    }
-                }
-            }
-            return newNFA;
-
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
+    //TODO: this can probably be a slightly reworked version of the DFA Accepts method
     @Override
     public boolean isDFA() {
         // TODO Auto-generated method stub
