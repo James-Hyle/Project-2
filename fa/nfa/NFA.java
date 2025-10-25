@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * State machine that accepts or rejects input strings over a input language
@@ -75,7 +72,7 @@ public class NFA implements NFAInterface, Serializable {
 
     @Override
     public void addSigma(char symbol) {
-        alphabet.add(symbol);
+        if (symbol != 'e') { alphabet.add(symbol); }
     }
 
     //TODO: rework accepts from DFA to NFA structure
@@ -83,22 +80,15 @@ public class NFA implements NFAInterface, Serializable {
     public boolean accepts(String s) {
         // find set current state to start
         NFAState current = startState;
+
+        Queue<NFAState> queue = new LinkedList<>();
         // convert string to character array and loop through each character
-        for (char c : s.toCharArray()) {
-            // ensure each character is contained in the alphabet
-            if (!alphabet.contains(c)) {
-                return false;
-            }
-            // find the transitions for the current state
-            HashMap<Character, NFAState> stateTransitions = delta.get(current);
-            // if the character is a transition for the state, retrieve the new state and
-            // set it as current
-            if (stateTransitions.containsKey(c)) {
-                current = stateTransitions.get(c);
-            } else {
-                return false;
-            }
+        queue.add(current);
+        while (!queue.isEmpty()) {
+            queue.remove();
+
         }
+
         // return whether the current state is a final state after consuming array
         return current.getFinalState();
     }
@@ -112,9 +102,11 @@ public class NFA implements NFAInterface, Serializable {
             NFAState current = statesStack.pop();
             closures.add(current);
             Set<NFAState> transitions = current.getTransitions('e');
-            for (NFAState transition : transitions) {
-                if (!statesStack.contains(transition)) {
-                    statesStack.push(transition);
+            if (transitions != null) {
+                for (NFAState transition : transitions) {
+                    if (!statesStack.contains(transition)) {
+                        statesStack.push(transition);
+                    }
                 }
             }
         }
@@ -139,28 +131,31 @@ public class NFA implements NFAInterface, Serializable {
 
     @Override
     public boolean isFinal(String name) {
+        if (!finalStates.contains(getState(name))) { return false; }
         return getState(name).getFinalState();
     }
 
     @Override
     public boolean isStart(String name) {
+        if (!states.contains(getState(name))) { return false; }
         return getState(name).getStartState();
     }
 
     @Override
     public boolean addTransition(String fromState, Set<String> toState, char onSymb) {
         NFAState from = getState(fromState);
+        if (!states.contains(from)) { return false; }
         Set<NFAState> to = new LinkedHashSet<>(STATESSIZE);
-        for(String state: toState) {
+        for (String state: toState) {
+            if (!states.contains(getState(state))) { return false; }
             to.add(getState(state));
         }
         Character s = Character.valueOf(onSymb);
 
-        if (from != null && !to.isEmpty() && alphabet.contains(onSymb)) {
+        if (from != null && !to.isEmpty() && (alphabet.contains(onSymb) || onSymb == 'e')) {
             from.addTransitions(s, to);
             return true;
         }
-
         return false;
     }
 
@@ -175,11 +170,17 @@ public class NFA implements NFAInterface, Serializable {
         throw new UnsupportedOperationException("Unimplemented method 'maxCopies'");
     }
 
-    //TODO: this can probably be a slightly reworked version of the DFA Accepts method
     @Override
     public boolean isDFA() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'isNFA'");
+        for (NFAState state : states) {
+            if (state.getTransitions('e') != null) { return false; }
+            for (Character c : alphabet) {
+                if (state.getTransitions(c) != null && state.getTransitions(c).toArray().length > 1) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -188,12 +189,21 @@ public class NFA implements NFAInterface, Serializable {
         sb.append(stringBuilderHelper("\nSigma = " + alphabet.toString()));
         sb.append("\ndelta =\n");
         for (char c : alphabet) {
-            sb.append(stringBuilderHelper("\t" + c));
+            sb.append(stringBuilderHelper("\t\t" + c));
         }
+        sb.append("\t\te");
         states.forEach(state -> {
             sb.append("\n" + state.getName() + "\t");
             for (char c : alphabet) {
-                sb.append(delta.get(state).get(c).toString() + "\t");
+                if (state.getTransitions(c) != null) {
+                    sb.append(stringBuilderHelper(state.getTransitions(c).toString() + "\t"));
+                }
+                else {
+                    sb.append("\t\t");
+                }
+            }
+            if (state.getTransitions('e') != null) {
+                sb.append(stringBuilderHelper(state.getTransitions('e').toString() + "\t"));
             }
         });
         sb.append("\nq0 = " + startState.toString());

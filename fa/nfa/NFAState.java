@@ -23,6 +23,7 @@ public class NFAState extends State {
         super(name);
         this.isStart = false;
         this.isFinal = false;
+        delta = new LinkedHashMap<>();
     }
 
     /**
