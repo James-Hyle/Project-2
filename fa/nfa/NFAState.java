@@ -77,5 +77,11 @@ public class NFAState extends State {
     /**
      * Set the transitions for the state
      */
-    public void addTransitions(char c, Set<NFAState> s) { delta.put(c, s); }
+    public void addTransitions(char c, Set<NFAState> s) {
+        if(delta.containsKey(c)) {
+            Set<NFAState> temp = delta.get(c);
+            s.addAll(temp);
+        }
+        delta.put(c, s);
+    }
 }

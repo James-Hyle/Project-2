@@ -111,12 +111,16 @@ public class NFA implements NFAInterface, Serializable {
     @Override
     public Set<NFAState> eClosure(NFAState s) {
         Set<NFAState> closures = new LinkedHashSet<>();
+        // create stack to hold reachable states
         Stack<NFAState> statesStack = new Stack<>();
         statesStack.push(s);
+        // until every reachable state has been checked loop
         while (!statesStack.isEmpty()) {
             NFAState current = statesStack.pop();
+            // add state if not already in closures
             closures.add(current);
             Set<NFAState> transitions = current.getTransitions('e');
+            // loop through valid epsilon transitions if any and add to the stack
             if (transitions != null) {
                 for (NFAState transition : transitions) {
                     if (!statesStack.contains(transition)) {
@@ -177,11 +181,13 @@ public class NFA implements NFAInterface, Serializable {
     @Override
     public boolean addTransition(String fromState, Set<String> toState, char onSymb) {
         NFAState from = getState(fromState);
+        // if from state isn't in system stop and return false
         if (!states.contains(from)) {
             return false;
         }
         Set<NFAState> to = new LinkedHashSet<>(STATESSIZE);
         for (String state : toState) {
+            // if any toStates are not in system, stop and return false
             if (!states.contains(getState(state))) {
                 return false;
             }
@@ -189,6 +195,8 @@ public class NFA implements NFAInterface, Serializable {
         }
         Character s = Character.valueOf(onSymb);
 
+        // if symbol is not in system alphabet or any states to or from are empty, stop and return false,
+        // otherwise add transitions for state
         if (from != null && !to.isEmpty() && (alphabet.contains(onSymb) || onSymb == 'e')) {
             from.addTransitions(s, to);
             return true;
@@ -236,9 +244,11 @@ public class NFA implements NFAInterface, Serializable {
     @Override
     public boolean isDFA() {
         for (NFAState state : states) {
+            // check each state for any epsilon transitions and if any found return false
             if (state.getTransitions('e') != null) {
                 return false;
             }
+            // check each state for any transitions with multiple toStates, if more than one found return false
             for (Character c : alphabet) {
                 if (state.getTransitions(c) != null && state.getTransitions(c).toArray().length > 1) {
                     return false;
