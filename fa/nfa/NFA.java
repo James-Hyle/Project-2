@@ -1,10 +1,5 @@
 package fa.nfa;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.*;
 
@@ -15,8 +10,8 @@ import java.util.*;
  */
 public class NFA implements NFAInterface, Serializable {
 
-    final short STATESSIZE = 5;
-    final short ALPHABETSIZE = 3;
+    final short STATESSIZE = 10;
+    final short ALPHABETSIZE = 10;
     StringBuilder sb = new StringBuilder();
 
     private Set<NFAState> states;
@@ -72,25 +67,45 @@ public class NFA implements NFAInterface, Serializable {
 
     @Override
     public void addSigma(char symbol) {
-        if (symbol != 'e') { alphabet.add(symbol); }
+        if (symbol != 'e') {
+            alphabet.add(symbol);
+        }
     }
 
-    //TODO: rework accepts from DFA to NFA structure
     @Override
     public boolean accepts(String s) {
-        // find set current state to start
-        NFAState current = startState;
-
-        Queue<NFAState> queue = new LinkedList<>();
-        // convert string to character array and loop through each character
-        queue.add(current);
-        while (!queue.isEmpty()) {
-            queue.remove();
-
+        // start epsilon-closure of states
+        Set<NFAState> currentStates = new HashSet<>();
+        currentStates.addAll(eClosure(startState));
+        if (s.isEmpty()) {
+            for (NFAState state : currentStates) {
+                if (this.finalStates.contains(state)) {
+                    return true;
+                }
+            }
+            return false;
         }
-
-        // return whether the current state is a final state after consuming array
-        return current.getFinalState();
+        // iterate through each char in input string
+        for (char symbol : s.toCharArray()) {
+            Set<NFAState> nextStates = new HashSet<>();
+            Queue<NFAState> queue = new LinkedList<>(currentStates);
+            while (!queue.isEmpty()) {
+                NFAState current = queue.poll();
+                Set<NFAState> transitions = getToState(current, symbol);
+                if (transitions != null && !transitions.isEmpty()) {
+                    nextStates.addAll(transitions);
+                }
+            }
+            // e-closure after processing char
+            currentStates = setEClosure(nextStates);
+        }
+        // check if any state is final state
+        for (NFAState state : currentStates) {
+            if (this.finalStates.contains(state)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -113,6 +128,20 @@ public class NFA implements NFAInterface, Serializable {
         return closures;
     }
 
+    /**
+     * find all e-closures of input set of states
+     * 
+     * @param s
+     * @return e-closures of states
+     */
+    public Set<NFAState> setEClosure(Set<NFAState> s) {
+        Set<NFAState> closures = new HashSet<>();
+        for (NFAState nS : s) {
+            closures.addAll(eClosure(nS));
+        }
+        return closures;
+    }
+
     @Override
     public Set<Character> getSigma() {
         return alphabet;
@@ -131,23 +160,31 @@ public class NFA implements NFAInterface, Serializable {
 
     @Override
     public boolean isFinal(String name) {
-        if (!finalStates.contains(getState(name))) { return false; }
+        if (!finalStates.contains(getState(name))) {
+            return false;
+        }
         return getState(name).getFinalState();
     }
 
     @Override
     public boolean isStart(String name) {
-        if (!states.contains(getState(name))) { return false; }
+        if (!states.contains(getState(name))) {
+            return false;
+        }
         return getState(name).getStartState();
     }
 
     @Override
     public boolean addTransition(String fromState, Set<String> toState, char onSymb) {
         NFAState from = getState(fromState);
-        if (!states.contains(from)) { return false; }
+        if (!states.contains(from)) {
+            return false;
+        }
         Set<NFAState> to = new LinkedHashSet<>(STATESSIZE);
-        for (String state: toState) {
-            if (!states.contains(getState(state))) { return false; }
+        for (String state : toState) {
+            if (!states.contains(getState(state))) {
+                return false;
+            }
             to.add(getState(state));
         }
         Character s = Character.valueOf(onSymb);
@@ -161,19 +198,47 @@ public class NFA implements NFAInterface, Serializable {
 
     @Override
     public Set<NFAState> getToState(NFAState from, char onSymb) {
-        return from.getTransitions(onSymb);
+        Set<NFAState> transitions = from.getTransitions(onSymb);
+        if (transitions == null) {
+            return new HashSet<>();
+        }
+        return transitions;
     }
 
     @Override
     public int maxCopies(String s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'maxCopies'");
+        int maxCopies = 0;
+        Set<NFAState> current = new HashSet<>();
+
+        current.add(startState);
+        current = setEClosure(current);
+
+        maxCopies = Math.max(maxCopies, current.size());
+        for (char c : s.toCharArray()) {
+
+            Set<NFAState> nextStates = new HashSet<>();
+            Queue<NFAState> q = new LinkedList<>(current);
+
+            while (!q.isEmpty()) {
+                NFAState fromState = q.poll();
+                Set<NFAState> transitions = getToState(fromState, c);
+                nextStates.addAll(transitions);
+            }
+            current = setEClosure(nextStates);
+            if (current.isEmpty()) {
+                return maxCopies;
+            }
+            maxCopies = Math.max(maxCopies, current.size());
+        }
+        return maxCopies;
     }
 
     @Override
     public boolean isDFA() {
         for (NFAState state : states) {
-            if (state.getTransitions('e') != null) { return false; }
+            if (state.getTransitions('e') != null) {
+                return false;
+            }
             for (Character c : alphabet) {
                 if (state.getTransitions(c) != null && state.getTransitions(c).toArray().length > 1) {
                     return false;
@@ -197,8 +262,7 @@ public class NFA implements NFAInterface, Serializable {
             for (char c : alphabet) {
                 if (state.getTransitions(c) != null) {
                     sb.append(stringBuilderHelper(state.getTransitions(c).toString() + "\t"));
-                }
-                else {
+                } else {
                     sb.append("\t\t");
                 }
             }
