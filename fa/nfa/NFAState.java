@@ -10,8 +10,7 @@ public class NFAState extends State {
     private boolean isFinal;
     private boolean isStart;
     private LinkedHashMap<Character, Set<NFAState>> delta;
-    //
-
+    
     /**
      * Constructor for a DFA state, initializes to non-start and non-final
      * 

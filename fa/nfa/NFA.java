@@ -218,6 +218,7 @@ public class NFA implements NFAInterface, Serializable {
         int maxCopies = 0;
         Set<NFAState> current = new HashSet<>();
 
+        // start epsilon-closure of states
         current.add(startState);
         current = setEClosure(current);
 
@@ -227,6 +228,7 @@ public class NFA implements NFAInterface, Serializable {
             Set<NFAState> nextStates = new HashSet<>();
             Queue<NFAState> q = new LinkedList<>(current);
 
+            // explore all current states for transitions on c
             while (!q.isEmpty()) {
                 NFAState fromState = q.poll();
                 Set<NFAState> transitions = getToState(fromState, c);
