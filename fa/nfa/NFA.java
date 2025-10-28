@@ -1,6 +1,5 @@
 package fa.nfa;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -8,7 +7,7 @@ import java.util.*;
  * 
  * @author James Hyle, Rebecca Berg
  */
-public class NFA implements NFAInterface, Serializable {
+public class NFA implements NFAInterface  {
 
     final short STATESSIZE = 10;
     final short ALPHABETSIZE = 10;
